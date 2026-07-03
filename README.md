@@ -170,26 +170,3 @@ streamlit run dashboard/app.py
 
 ### Get an OpenAQ API key
 Sign up free at https://explore.openaq.org/register
-
----
-
-## Key Engineering Decisions
-
-**Why `ingestion_date` instead of `measured_at` for trend grouping?**
-OpenAQ sensors report data with highly variable freshness — some sensors lag by months. Grouping by `ingestion_date` (when the pipeline ran) rather than `measured_at` (sensor timestamp) gives a reliable daily trend that accurately reflects when data was collected.
-
-**Why upsert instead of insert?**
-The pipeline runs twice daily. Using `ON CONFLICT DO UPDATE` means re-runs update existing readings rather than creating duplicates, keeping the raw table clean.
-
-**Why custom Docker image instead of `_PIP_ADDITIONAL_REQUIREMENTS`?**
-Airflow's `_PIP_ADDITIONAL_REQUIREMENTS` reinstalls packages on every container restart, causing 5-10 minute startup delays. A custom Dockerfile bakes packages in once — restarts take seconds.
-
----
-
-## Resume Bullet
-
-> *Built and deployed a production-style air quality data pipeline ingesting live data for 8 Indian cities via Airflow (scheduled twice daily), transforming through dbt medallion architecture, validating with Great Expectations, and surfacing insights via a live Streamlit dashboard with automated Slack alerts for unhealthy AQI levels.*
-
----
-
-*Data from OpenAQ public API. For educational/portfolio purposes.*
