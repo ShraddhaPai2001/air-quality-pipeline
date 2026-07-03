@@ -11,3 +11,4 @@ airflow-logs/
 *.log
 .idea/
 .vscode/
+.streamlit/

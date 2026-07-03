@@ -16,11 +16,23 @@ load_dotenv()
 
 st.set_page_config(page_title="Is the Air Safe?", page_icon="🌤️", layout="wide")
 
-PG_HOST     = os.environ.get("PG_HOST", "localhost")
-PG_PORT     = os.environ.get("PG_PORT", "5432")
-PG_DB       = os.environ.get("PG_DB", "airflow")
-PG_USER     = os.environ.get("PG_USER", "airflow")
-PG_PASSWORD = os.environ.get("PG_PASSWORD", "airflow")
+def get_config(key, default=None):
+    """Read from Streamlit secrets first (Cloud), fall back to env vars (local)."""
+    try:
+        if key in st.secrets:
+            return st.secrets[key]
+    except Exception:
+        pass
+    return os.environ.get(key, default)
+
+PG_HOST     = get_config("PG_HOST", "localhost")
+PG_PORT     = get_config("PG_PORT", "5432")
+PG_DB       = get_config("PG_DB", "airflow")
+PG_USER     = get_config("PG_USER", "airflow")
+PG_PASSWORD = get_config("PG_PASSWORD", "airflow")
+# Neon requires SSL; local Docker Postgres doesn't need it — only force it
+# when we're not pointing at localhost.
+PG_SSLMODE  = get_config("PG_SSLMODE", "require" if PG_HOST != "localhost" else "prefer")
 
 PARAMETER_INFO = {
     "pm25":             {"label": "Fine Particles (PM2.5)",  "desc": "Tiny particles that get deep into your lungs — mainly from vehicles, dust, and burning."},
@@ -66,7 +78,8 @@ def friendly_name(p):
 def load_all_data():
     """Load everything from the single mart table — used for both trend and latest breakdown."""
     conn = psycopg2.connect(host=PG_HOST, port=PG_PORT, dbname=PG_DB,
-                            user=PG_USER, password=PG_PASSWORD)
+                            user=PG_USER, password=PG_PASSWORD,
+                            sslmode=PG_SSLMODE)
     df = pd.read_sql(
         "SELECT * FROM public_marts.mart_air_quality_summary ORDER BY measured_at DESC;",
         conn
