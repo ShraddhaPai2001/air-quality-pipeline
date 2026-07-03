@@ -1,0 +1,27 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: public
+    tables:
+      - name: raw_air_quality_measurements
+        description: Raw air quality measurements loaded daily from OpenAQ via MinIO.
+        columns:
+          - name: id
+            tests:
+              - unique
+              - not_null
+
+models:
+  - name: stg_air_quality_measurements
+    description: Cleaned air quality measurements, one row per sensor reading.
+    columns:
+      - name: city
+        tests:
+          - not_null
+      - name: parameter
+        tests:
+          - not_null
+      - name: value
+        tests:
+          - not_null
