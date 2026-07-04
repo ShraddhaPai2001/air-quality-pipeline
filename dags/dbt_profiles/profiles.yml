@@ -3,10 +3,10 @@ air_quality:
   outputs:
     dev:
       type: postgres
-      host: postgres        # Docker internal hostname, not localhost
+      host: ep-curly-glade-aomugt1b.c-2.ap-southeast-1.aws.neon.tech  
       port: 5432
-      user: airflow
-      password: airflow
-      dbname: airflow
+      user: neondb_owner
+      password: npg_EoGr4zm0udtM
+      dbname: neondb
       schema: public
       threads: 4

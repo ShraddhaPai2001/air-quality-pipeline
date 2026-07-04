@@ -13,6 +13,11 @@ x-airflow-common: &airflow-common
     MINIO_ENDPOINT: minio:9000
     MINIO_ACCESS_KEY: minioadmin
     MINIO_SECRET_KEY: minioadmin
+    PG_HOST: ${PG_HOST}
+    PG_DB: ${PG_DB}
+    PG_USER: ${PG_USER}
+    PG_PASSWORD: ${PG_PASSWORD}
+    PG_PORT: ${PG_PORT}
   volumes:
     - ./dags:/opt/airflow/dags
     - ./dbt:/opt/airflow/dags/dbt
