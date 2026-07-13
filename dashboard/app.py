@@ -7,10 +7,10 @@ One source of truth: public_marts.mart_air_quality_summary
 
 import os
 import pandas as pd
-import psycopg2
 import streamlit as st
 import plotly.express as px
 from dotenv import load_dotenv
+from sqlalchemy import create_engine, text
 
 load_dotenv()
 
@@ -30,9 +30,6 @@ PG_PORT     = get_config("PG_PORT", "5432")
 PG_DB       = get_config("PG_DB", "airflow")
 PG_USER     = get_config("PG_USER", "airflow")
 PG_PASSWORD = get_config("PG_PASSWORD", "airflow")
-# Neon requires SSL; local Docker Postgres doesn't need it — only force it
-# when we're not pointing at localhost.
-PG_SSLMODE  = get_config("PG_SSLMODE", "require" if PG_HOST != "localhost" else "prefer")
 
 PARAMETER_INFO = {
     "pm25":             {"label": "Fine Particles (PM2.5)",  "desc": "Tiny particles that get deep into your lungs — mainly from vehicles, dust, and burning."},
@@ -74,17 +71,23 @@ def friendly_name(p):
     return PARAMETER_INFO.get(p, {}).get("label", p)
 
 
+def get_engine():
+    """SQLAlchemy engine — works correctly with pandas and Streamlit Cloud Python 3.12."""
+    return create_engine(
+        f"postgresql+psycopg2://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DB}",
+        connect_args={"sslmode": "require" if PG_HOST != "localhost" else "prefer"}
+    )
+
+
 @st.cache_data(ttl=300)
 def load_all_data():
     """Load everything from the single mart table — used for both trend and latest breakdown."""
-    conn = psycopg2.connect(host=PG_HOST, port=PG_PORT, dbname=PG_DB,
-                            user=PG_USER, password=PG_PASSWORD,
-                            sslmode=PG_SSLMODE)
-    df = pd.read_sql(
-        "SELECT * FROM public_marts.mart_air_quality_summary ORDER BY measured_at DESC;",
-        conn
-    )
-    conn.close()
+    engine = get_engine()
+    with engine.connect() as conn:
+        df = pd.read_sql(
+            text("SELECT * FROM public_marts.mart_air_quality_summary ORDER BY measured_at DESC;"),
+            conn
+        )
     df["measured_at"] = pd.to_datetime(df["measured_at"])
     return df
 
@@ -92,9 +95,10 @@ def load_all_data():
 df = load_all_data()
 
 st.title("🌤️ Is the Air Safe to Breathe?")
-st.caption("This is an interactive air quality dashboard that provides a city-level view of air pollution across selected Indian cities."
-            " It displays the latest pollutant levels using real-time data from OpenAQ and visualizes 7-day pollution trends through easy-to-understand charts."
-           " The dashboard is designed to make air quality information accessible to everyone by presenting pollutant levels, health categories, and historical trends in a simple, user-friendly format."
+st.caption(
+    "This is an interactive air quality dashboard that provides a city-level view of air pollution across selected Indian cities."
+    " It displays the latest pollutant levels using real-time data from OpenAQ and visualizes 7-day pollution trends through easy-to-understand charts."
+    " The dashboard is designed to make air quality information accessible to everyone by presenting pollutant levels, health categories, and historical trends in a simple, user-friendly format."
 )
 
 if df.empty:
@@ -178,14 +182,12 @@ for tab, city in zip(tabs, cities):
                 "Only one day of data so far — the trend chart will show a line "
                 "as more days accumulate. Come back tomorrow!"
             )
-            # Still show the single-day dot so it's not completely blank
         else:
             st.caption(f"Showing {num_days} days of accumulated pipeline data.")
 
         if num_days > 0:
             available_params = sorted(city_trend["parameter"].unique())
             param_labels = {p: friendly_name(p) for p in available_params}
-            #default = [lbl for p, lbl in param_labels.items() if p in ("pm25", "pm10")] or list(param_labels.values())[:2]
             default = list(param_labels.values())
             selected_labels = st.multiselect(
                 "Choose pollutant(s)",
