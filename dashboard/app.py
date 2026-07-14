@@ -73,9 +73,13 @@ def friendly_name(p):
 
 def get_engine():
     """SQLAlchemy engine — works correctly with pandas and Streamlit Cloud Python 3.12."""
+    # return create_engine(
+    #     f"postgresql+psycopg2://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DB}",
+    #     connect_args={"sslmode": "require" if PG_HOST != "localhost" else "prefer"}
+    # )
     return create_engine(
-        f"postgresql+psycopg2://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DB}",
-        connect_args={"sslmode": "require" if PG_HOST != "localhost" else "prefer"}
+        f"postgresql+pg8000://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DB}",
+        connect_args={"ssl_context": True} if PG_HOST != "localhost" else {}
     )
 
 
