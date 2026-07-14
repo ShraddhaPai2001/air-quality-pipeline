@@ -2,7 +2,7 @@
 
 A production-style end-to-end data engineering pipeline that ingests live air quality data from Indian cities, validates it, transforms it through a medallion architecture, and surfaces insights via a live Streamlit dashboard — with automated Slack alerts when pollution levels are unhealthy.
 
-**[🔗 Live Dashboard](https://air-quality-pipeline-shraddha-g-pai.streamlit.app/)**
+**[🔗 Live Dashboard](https://air-quality-pipeline-bmmk8m5lgm4grzjewe9vef.streamlit.app/)**
 
 ---
 
