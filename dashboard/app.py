@@ -144,8 +144,11 @@ for tab, city in zip(tabs, cities):
             (pollutant_df["measured_at"].dt.normalize() == city_latest_date)
         ].sort_values("parameter")
 
-        # ── All accumulated rows (for trend chart) ───────────────────────────
+        # ── Last 7 days of rows, including today (for trend chart) ───────────
         city_trend = pollutant_df[pollutant_df["city"] == city].copy()
+        if city_latest_date is not None:
+            cutoff_date = city_latest_date - pd.Timedelta(days=6)
+            city_trend = city_trend[city_trend["measured_at"].dt.normalize() >= cutoff_date]
 
         # ── Headline status ───────────────────────────────────────────────────
         if city_latest.empty:
@@ -187,7 +190,7 @@ for tab, city in zip(tabs, cities):
                 "as more days accumulate. Come back tomorrow!"
             )
         else:
-            st.caption(f"Showing {num_days} days of accumulated pipeline data.")
+            st.caption(f"Showing the last {num_days} days of data (including today).")
 
         if num_days > 0:
             available_params = sorted(city_trend["parameter"].unique())
@@ -213,7 +216,8 @@ for tab, city in zip(tabs, cities):
                     markers=True,
                     labels={"avg_value": "Average Level", "measured_at": "Date"},
                 )
-                fig.update_layout(legend_title="", xaxis_tickformat="%d %b")
+                fig.update_layout(legend_title="")
+                fig.update_xaxes(tickformat="%d %b", dtick=86400000)  # 86,400,000 ms = 1 day → one tick per day
                 st.plotly_chart(fig, use_container_width=True, key=f"chart_{city}")
 
         # ── Raw table (collapsed) ─────────────────────────────────────────────
